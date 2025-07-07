@@ -1,0 +1,11 @@
+{
+    "title": "My Book",
+    "author": "Author Name",
+    "genre": "Fiction",
+    "pages": 300,
+    "price": 29.99,
+    "description": "A fascinating fiction book",
+    "publishDate": "2023-01-15",
+    "publisher": "My Publisher",
+    "isbn": "978-1234567890"
+  }

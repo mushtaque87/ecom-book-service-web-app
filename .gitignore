@@ -1,0 +1,18 @@
+# Node modules
+**/node_modules/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# dotenv environment files
+.env
+**/.env
+
+# MongoDB data (if any local)
+data/
+**/data/
+
+# Docker
+**/mongo-data/ 

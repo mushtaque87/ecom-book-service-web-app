@@ -1,0 +1,165 @@
+{
+  "info": {
+    "_postman_id": "b1b2b3b4-b5b6-b7b8-b9ba-bbcbdbebfbfc",
+    "name": "BookPublishing Microservices",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "User Service",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "http://localhost:8080/users/health", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["users", "health"] }
+          }
+        },
+        {
+          "name": "Get User Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "http://localhost:8080/users/profile/:userId", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["users", "profile", ":userId"] }
+          }
+        },
+        {
+          "name": "Get All Services (Debug)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "http://localhost:8080/users/services", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["users", "services"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Book Service",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "http://localhost:8080/books/health", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["books", "health"] }
+          }
+        },
+        {
+          "name": "Get All Books",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "http://localhost:8080/books", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["books"] }
+          }
+        },
+        {
+          "name": "Get Book By ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "http://localhost:8080/books/:bookId", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["books", ":bookId"] }
+          }
+        },
+        {
+          "name": "Create Book",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Sample Book\",\n  \"author\": \"Jane Doe\",\n  \"isbn\": \"1234567890\",\n  \"publisher\": \"Sample Publisher\",\n  \"publishDate\": \"2024-01-01\",\n  \"genre\": \"Fiction\",\n  \"description\": \"A sample book description.\",\n  \"price\": 19.99,\n  \"pages\": 300,\n  \"language\": \"English\",\n  \"coverImage\": \"http://example.com/cover.jpg\",\n  \"stock\": 10,\n  \"isAvailable\": true\n}"
+            },
+            "url": { "raw": "http://localhost:8080/books", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["books"] }
+          }
+        },
+        {
+          "name": "Update Book",
+          "request": {
+            "method": "PUT",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated Book Title\"\n}"
+            },
+            "url": { "raw": "http://localhost:8080/books/:bookId", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["books", ":bookId"] }
+          }
+        },
+        {
+          "name": "Delete Book",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "http://localhost:8080/books/:bookId", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["books", ":bookId"] }
+          }
+        },
+        {
+          "name": "Get Books By Genre",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "http://localhost:8080/books/genre/:genre", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["books", "genre", ":genre"] }
+          }
+        },
+        {
+          "name": "Search Books",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "http://localhost:8080/books/search?q=sample", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["books", "search"], "query": [ { "key": "q", "value": "sample" } ] }
+          }
+        },
+        {
+          "name": "Get All Services (Debug)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "http://localhost:8080/books/services", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["books", "services"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Search Service",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "http://localhost:8080/search/health", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["search", "health"] }
+          }
+        },
+        {
+          "name": "Get All Services (Debug)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "http://localhost:8080/search/services", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["search", "services"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Order Service",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "http://localhost:8080/orders/health", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["orders", "health"] }
+          }
+        },
+        {
+          "name": "Get All Services (Debug)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "http://localhost:8080/orders/services", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["orders", "services"] }
+          }
+        }
+      ]
+    }
+  ]
+} 

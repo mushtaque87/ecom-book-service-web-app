@@ -1,0 +1,149 @@
+version: '3.8'
+services:
+  service-registry:
+    build: ./service-registry
+    ports:
+      - "5007:5007"
+    environment:
+      - PORT=5007
+      - MONGO_URL=mongodb://registry-mongo:27017/registrydb
+    depends_on:
+      - registry-mongo
+  registry-mongo:
+    image: mongo:5
+    ports:
+      - "27023"
+    volumes:
+      - registry-mongo-data:/data/db
+
+  user-service:
+    build: 
+      context: .
+      dockerfile: user-service/Dockerfile
+    ports:
+      - "5001:5000"
+    environment:
+      - MONGO_URL=mongodb://user-mongo:27017/userdb
+    depends_on:
+      - user-mongo
+      - service-registry
+  user-mongo:
+    image: mongo:5
+    ports:
+      - "27017"
+    volumes:
+      - user-mongo-data:/data/db
+
+  publisher-service:
+    build: 
+      context: .
+      dockerfile: publisher-service/Dockerfile
+    ports:
+      - "5002:5000"
+    environment:
+      - MONGO_URL=mongodb://publisher-mongo:27017/publisherdb
+    depends_on:
+      - publisher-mongo
+      - service-registry
+  publisher-mongo:
+    image: mongo:5
+    ports:
+      - "27018"
+    volumes:
+      - publisher-mongo-data:/data/db
+
+  book-service:
+    build: 
+      context: .
+      dockerfile: book-service/Dockerfile
+    ports:
+      - "5003:5000"
+    environment:
+      - MONGO_URL=mongodb://book-mongo:27017/bookdb
+    depends_on:
+      - book-mongo
+      - service-registry
+  book-mongo:
+    image: mongo:5
+    ports:
+      - "27019"
+    volumes:
+      - book-mongo-data:/data/db
+
+  search-service:
+    build: 
+      context: .
+      dockerfile: search-service/Dockerfile
+    ports:
+      - "5004:5000"
+    environment:
+      - MONGO_URL=mongodb://search-mongo:27017/searchdb
+    depends_on:
+      - search-mongo
+      - service-registry
+  search-mongo:
+    image: mongo:5
+    ports:
+      - "27020"
+    volumes:
+      - search-mongo-data:/data/db
+
+  cart-service:
+    build: 
+      context: .
+      dockerfile: cart-service/Dockerfile
+    ports:
+      - "5005:5000"
+    environment:
+      - MONGO_URL=mongodb://cart-mongo:27017/cartdb
+    depends_on:
+      - cart-mongo
+      - service-registry
+  cart-mongo:
+    image: mongo:5
+    ports:
+      - "27021"
+    volumes:
+      - cart-mongo-data:/data/db
+
+  order-service:
+    build: 
+      context: .
+      dockerfile: order-service/Dockerfile
+    ports:
+      - "5006:5000"
+    environment:
+      - MONGO_URL=mongodb://order-mongo:27017/orderdb
+    depends_on:
+      - order-mongo
+      - service-registry
+  order-mongo:
+    image: mongo:5
+    ports:
+      - "27022"
+    volumes:
+      - order-mongo-data:/data/db
+
+  api-gateway:
+    build: 
+      context: .
+      dockerfile: api-gateway/Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      - user-service
+      - publisher-service
+      - book-service
+      - search-service
+      - cart-service
+      - order-service
+      - service-registry
+
+volumes:
+  registry-mongo-data:
+  user-mongo-data:
+  publisher-mongo-data:
+  book-mongo-data:
+  search-mongo-data:
+  cart-mongo-data:
+  order-mongo-data: 
