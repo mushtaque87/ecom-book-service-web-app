@@ -1,4 +1,5 @@
 FROM node:18
+RUN echo "API Gateway"
 WORKDIR /app
 COPY api-gateway/package*.json ./
 RUN npm install

@@ -1,4 +1,5 @@
 FROM node:18
+RUN echo "User Service"
 WORKDIR /app
 COPY user-service/package*.json ./
 RUN npm install

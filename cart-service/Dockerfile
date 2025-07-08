@@ -1,4 +1,5 @@
 FROM node:18
+RUN echo "Cart Service"
 WORKDIR /app
 COPY cart-service/package*.json ./
 RUN npm install

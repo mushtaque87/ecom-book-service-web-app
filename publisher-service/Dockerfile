@@ -1,4 +1,5 @@
 FROM node:18
+RUN echo "Publisher Service"
 WORKDIR /app
 COPY publisher-service/package*.json ./
 RUN npm install

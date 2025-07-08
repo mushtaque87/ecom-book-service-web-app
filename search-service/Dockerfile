@@ -1,4 +1,5 @@
 FROM node:18
+RUN echo "Search Service"
 WORKDIR /app
 COPY search-service/package*.json ./
 RUN npm install
