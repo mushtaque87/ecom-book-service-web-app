@@ -129,7 +129,7 @@ const registerService = async () => {
 };
 
 // Swagger UI
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, {
+app.use('/books/api-docs', swaggerUi.serve, swaggerUi.setup(specs, {
   customCss: '.swagger-ui .topbar { display: none }',
   customSiteTitle: 'Book Service API Documentation',
   swaggerOptions: {

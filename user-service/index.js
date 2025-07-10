@@ -145,7 +145,7 @@ const registerService = async () => {
 };
 
 // Swagger UI
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, {
+app.use('/users/api-docs', swaggerUi.serve, swaggerUi.setup(specs, {
   customCss: '.swagger-ui .topbar { display: none }',
   customSiteTitle: 'User Service API Documentation',
   swaggerOptions: {

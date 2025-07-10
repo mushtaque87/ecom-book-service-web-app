@@ -1,7 +1,7 @@
 FROM node:18
 WORKDIR /app
-COPY package*.json ./
+COPY service-registry/package*.json ./
 RUN npm install
-COPY . .
+COPY service-registry/ ./
 EXPOSE 5007
 CMD ["npm", "start"] 

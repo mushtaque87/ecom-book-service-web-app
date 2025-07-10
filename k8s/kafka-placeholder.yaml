@@ -1,0 +1,3 @@
+# Placeholder for Kafka deployment and service
+# Recommended: Use Strimzi or Bitnami Helm chart for production-grade Kafka on Kubernetes
+# See: https://strimzi.io/ or https://bitnami.com/stack/kafka/helm 
