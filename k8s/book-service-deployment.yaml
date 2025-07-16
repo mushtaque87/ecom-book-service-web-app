@@ -15,8 +15,8 @@ spec:
     spec:
       containers:
       - name: book-service
-        image: book-service:latest
-        imagePullPolicy: IfNotPresent
+        image: mushtaque87/book-service:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 5000
         env:

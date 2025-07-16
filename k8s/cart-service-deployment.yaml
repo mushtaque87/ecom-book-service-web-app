@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: cart-service
-        image: cart-service:latest
+        image: mushtaque87/cart-service:latest
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 5000

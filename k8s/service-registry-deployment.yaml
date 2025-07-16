@@ -15,8 +15,8 @@ spec:
     spec:
       containers:
       - name: service-registry
-        image: service-registry:latest
-        imagePullPolicy: IfNotPresent
+        image: mushtaque87/service-registry:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 5007
         env:

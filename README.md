@@ -349,3 +349,55 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - Services send heartbeats every 30 seconds
 - All APIs are documented with Swagger/OpenAPI 3.0
 - Prometheus metrics are available for monitoring
+
+## ☁️ Deploying to Linode Kubernetes
+
+### Environment Variables in Kubernetes
+
+When deploying to Linode Kubernetes (or any Kubernetes cluster), you must set environment variables in your deployment YAML files. If these are not set, your services will use fallback/default values (e.g., default ports, localhost MongoDB URLs), which will cause connectivity issues.
+
+**Example (in your deployment YAML):**
+
+```yaml
+env:
+  - name: PORT
+    value: '5000'
+  - name: MONGO_URL
+    value: mongodb://mongo:mongo123@book-mongo:27017/bookdb?authSource=admin
+```
+
+- The variable names must match what your code expects (e.g., `PORT`, `MONGO_URL`).
+- The values must be quoted if they are numbers (e.g., `"5000"`).
+
+### Applying Changes
+
+After editing your deployment YAML, apply it with:
+
+```sh
+kubectl apply -f k8s/<your-deployment-file>.yaml
+```
+
+If you change environment variables, restart the pod to pick up the new values:
+
+```sh
+kubectl delete pod <pod-name> -n <namespace>
+```
+
+### Verifying Environment Variables in a Pod
+
+To check if your environment variables are set correctly in a running pod:
+
+```sh
+kubectl exec -it <pod-name> -n <namespace> -- printenv | grep <VAR_NAME>
+```
+
+Example:
+
+```sh
+kubectl exec -it book-service-xxxx -n book-app -- printenv | grep MONGO_URL
+```
+
+### Troubleshooting Fallback Values
+
+- If your app is using fallback ports or MongoDB URLs, it means the environment variable is not set or is misspelled in the deployment YAML.
+- Double-check the `env` section and redeploy.

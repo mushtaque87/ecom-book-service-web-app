@@ -8,6 +8,6 @@ spec:
     app: book-service
   ports:
     - name: http
-      port: 5003
+      port: 5000
       targetPort: 5000
   type: ClusterIP 

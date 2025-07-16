@@ -9,7 +9,7 @@ const app = express();
 app.use(express.json());
 
 const PORT = process.env.PORT || 5007;
-const MONGO_URL = process.env.MONGO_URL || 'mongodb://registry-mongo:27017/registrydb';
+const MONGO_URL = process.env.MONGO_URL || 'mongodb://service-registry-mongo:27017/registrydb';
 
 mongoose.connect(MONGO_URL, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => console.log('Service Registry MongoDB connected'))
