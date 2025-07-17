@@ -17,7 +17,7 @@ resource "linode_lke_cluster" "book_cluster" {
   region      = "ap-west"
   pool {
     type  = "g6-standard-1"
-    count = 3
+    count = 1
   }
 }
 
