@@ -16,3 +16,7 @@ data/
 
 # Docker
 **/mongo-data/ 
+.terraform/providers/registry.terraform.io/linode/linode/1.30.0/darwin_amd64/LICENSE
+/.terraform
+.terraform.lock.hcl
+terraform.tfstate

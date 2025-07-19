@@ -33,3 +33,22 @@ echo "Applying ingress..."
 kubectl apply -n $NAMESPACE -f k8s/all-services-ingress.yaml
 
 echo "Book service stack (book-service, service-registry, api-gateway) has been deployed to namespace $NAMESPACE." 
+
+
+NAMESPACE=book-app
+APP_LABEL=service-registry
+
+# Wait for pod to be running
+while true; do
+  POD=$(kubectl get pods -n $NAMESPACE -l app=$APP_LABEL -o jsonpath='{.items[0].metadata.name}')
+  STATUS=$(kubectl get pod $POD -n $NAMESPACE -o jsonpath='{.status.phase}')
+  if [ "$STATUS" == "Running" ]; then
+    break
+  fi
+  echo "Waiting for $APP_LABEL pod to be running..."
+  sleep 5
+done
+
+# Install packages
+kubectl exec -n $NAMESPACE $POD -- apt update
+kubectl exec -n $NAMESPACE $POD -- apt install -y dnsutils netcat-openbsd

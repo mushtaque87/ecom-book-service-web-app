@@ -5,8 +5,11 @@ metadata:
   namespace: book-app
   #annotations:
     #nginx.ingress.kubernetes.io/rewrite-target: /$1
+  annotations:
+    konghq.com/strip-path: "false"
+    konghq.com/plugins: jwt-auth,rate-limit
 spec:
-  ingressClassName: nginx
+  ingressClassName: kong
   rules:
     - http:
         paths:
@@ -23,7 +26,7 @@ spec:
               service:
                 name: book-service
                 port:
-                  number: 5003
+                  number: 5000
           - path: /users
             pathType: Prefix
             backend:

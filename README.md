@@ -401,3 +401,91 @@ kubectl exec -it book-service-xxxx -n book-app -- printenv | grep MONGO_URL
 
 - If your app is using fallback ports or MongoDB URLs, it means the environment variable is not set or is misspelled in the deployment YAML.
 - Double-check the `env` section and redeploy.
+
+## ☁️ Infrastructure as Code (IaaS) and Terraform for Linode Kubernetes
+
+You can provision a Linode Kubernetes cluster using Terraform (IaaS) and deploy your application to it. This enables repeatable, automated infrastructure setup.
+
+### 1. Prerequisites
+
+- [Terraform](https://www.terraform.io/downloads.html) (v1.0+ recommended)
+- Linode API Token (create in Linode Cloud Manager under your profile > API Tokens)
+
+### 2. Example Terraform Configuration
+
+Create a file named `linode-lke-book-cluster.tf`:
+
+```hcl
+terraform {
+  required_providers {
+    linode = {
+      source  = "linode/linode"
+      version = "~> 1.0"
+    }
+  }
+}
+
+provider "linode" {
+  token = var.linode_token
+}
+
+resource "linode_lke_cluster" "book_cluster" {
+  label       = "book_cluster"
+  k8s_version = "1.29"
+  region      = "us-east"
+  pool {
+    type  = "g6-standard-1" # 1 vCPU, 2GB RAM (shared CPU)
+    count = 3
+  }
+}
+
+output "kubeconfig" {
+  value     = linode_lke_cluster.book_cluster.kubeconfig
+  sensitive = true
+}
+
+variable "linode_token" {
+  description = "Linode API token"
+  type        = string
+}
+```
+
+### 3. Create `terraform.tfvars`
+
+Create a file named `terraform.tfvars` in the same directory:
+
+```hcl
+linode_token = "YOUR_LINODE_API_TOKEN"
+```
+
+Replace `YOUR_LINODE_API_TOKEN` with your actual token from the Linode Cloud Manager.
+
+### 4. Deploy the Cluster
+
+```sh
+terraform init
+terraform apply
+```
+
+- The kubeconfig for your cluster will be output. Save it to a file (e.g., `book_cluster_kubeconfig.yaml`).
+
+### 5. Use the Cluster
+
+Set your kubeconfig:
+
+```sh
+export KUBECONFIG=/path/to/book_cluster_kubeconfig.yaml
+```
+
+### 6. Deploy Your Application
+
+Apply your Kubernetes manifests as usual:
+
+```sh
+kubectl apply -f k8s/
+```
+
+### 7. Notes
+
+- If you hit NodeBalancer (LoadBalancer) quota limits, delete unused NodeBalancers or contact Linode support to increase your quota.
+- You can adjust the node pool size/type in the Terraform file as needed.
