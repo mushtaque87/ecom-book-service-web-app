@@ -1,0 +1,11 @@
+export KUBECONFIG=/path/to/book_cluster_kubeconfig.yaml
+
+kubectl config get-contexts
+kubectl config use-context <context-name>
+
+kubectl get pods -n book-app
+kubectl get svc -n book-app
+kubectl get nodes -n book-app
+
+#delete all resources in the namespace 
+kubectl delete all --all -n book-app && kubectl delete pvc --all -n book-app && kubectl delete pv --all && kubectl delete jobs --all -n book-app

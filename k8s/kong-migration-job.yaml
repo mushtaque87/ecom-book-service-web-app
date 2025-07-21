@@ -1,0 +1,22 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kong-migrations
+  namespace: book-app
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+      - name: kong-migrations
+        image: kong:3.6.1
+        env:
+        - name: KONG_DATABASE
+          value: postgres
+        - name: KONG_PG_HOST
+          value: kong-postgres
+        - name: KONG_PG_USER
+          value: kong
+        - name: KONG_PG_PASSWORD
+          value: kong
+        command: ["kong", "migrations", "bootstrap"] 
