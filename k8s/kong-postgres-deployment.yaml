@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kong-postgres
+  namespace: book-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kong-postgres
+  template:
+    metadata:
+      labels:
+        app: kong-postgres
+    spec:
+      containers:
+      - name: kong-postgres
+        image: postgres:13
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_USER
+          value: kong
+        - name: POSTGRES_DB
+          value: kong
+        - name: POSTGRES_PASSWORD
+          value: kong
+        volumeMounts:
+        - name: kong-postgres-pvc
+          mountPath: /var/lib/postgresql/data
+      volumes:
+      - name: kong-postgres-pvc
+        persistentVolumeClaim:
+          claimName: kong-postgres-pvc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: kong-postgres-pvc
+  namespace: book-app
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi 

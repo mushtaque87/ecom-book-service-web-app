@@ -1,5 +1,0 @@
-export KUBECONFIG=/path/to/book_cluster_kubeconfig.yaml
-
-kubectl get pods -n book-app
-kubectl get svc -n book-app
-kubectl get nodes -n book-app
