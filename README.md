@@ -489,3 +489,7 @@ kubectl apply -f k8s/
 
 - If you hit NodeBalancer (LoadBalancer) quota limits, delete unused NodeBalancers or contact Linode support to increase your quota.
 - You can adjust the node pool size/type in the Terraform file as needed.
+
+### 6. Deploy Your Application Locally
+
+- Run deploy-localk8.sh to launch the Book service + Kong + Redis cluster

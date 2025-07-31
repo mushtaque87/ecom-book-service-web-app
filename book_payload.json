@@ -1,0 +1,11 @@
+{
+  "title": "Performance Test Book",
+  "author": "Test Author",
+  "isbn": "978-0000000000",
+  "publisher": "Test Publisher",
+  "publishDate": "2024-01-01",
+  "genre": "Testing",
+  "description": "A book created for performance testing",
+  "price": 19.99,
+  "pages": 200
+}

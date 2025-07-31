@@ -1,17 +1,148 @@
 const express = require('express');
+const compression = require('compression');
+const cluster = require('cluster');
+const os = require('os');
 const mongoose = require('mongoose');
 const ServiceDiscovery = require('./shared/service-discovery');
 require('dotenv').config();
 const axios = require('axios');
 const swaggerUi = require('swagger-ui-express');
 const swaggerJsdoc = require('swagger-jsdoc');
+const redis = require('redis');
+const { Pool } = require('pg');
 const Book = require('./models/Book');
 
+// Ultra-high performance PostgreSQL connection
+const pgPool = new Pool({
+  host: 'postgres',
+  port: 5432,
+  database: 'bookdb',
+  user: 'postgres',
+  password: 'postgres123',
+  max: 100,              // Increased for high concurrency
+  min: 10,               // Keep connections warm
+  idleTimeoutMillis: 10000,
+  connectionTimeoutMillis: 1000,
+  acquireTimeoutMillis: 2000,
+  createTimeoutMillis: 2000,
+  destroyTimeoutMillis: 1000,
+  reapIntervalMillis: 1000,
+  createRetryIntervalMillis: 200
+});
+
+pgPool.on('connect', () => console.log('✅ PostgreSQL connected'));
+pgPool.on('error', (err) => console.log('❌ PostgreSQL error:', err.message));
+
+// Initialize PostgreSQL table
+const initPostgres = async () => {
+  try {
+    await pgPool.query(`
+      CREATE TABLE IF NOT EXISTS books (
+        id SERIAL PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        author VARCHAR(255) NOT NULL,
+        isbn VARCHAR(20) UNIQUE NOT NULL,
+        publisher VARCHAR(255),
+        publish_date DATE,
+        genre VARCHAR(100),
+        description TEXT,
+        price DECIMAL(10,2),
+        pages INTEGER,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    
+    await pgPool.query(`
+      CREATE INDEX IF NOT EXISTS idx_books_title ON books(title);
+      CREATE INDEX IF NOT EXISTS idx_books_author ON books(author);
+      CREATE INDEX IF NOT EXISTS idx_books_genre ON books(genre);
+    `);
+    
+    console.log('✅ PostgreSQL table initialized');
+  } catch (error) {
+    console.error('❌ PostgreSQL init error:', error.message);
+  }
+};
+
+initPostgres();
+
+// Ultra-high performance Redis client
+const redisClient = redis.createClient({
+  host: 'redis',
+  port: 6379,
+  retry_strategy: (options) => {
+    if (options.error && options.error.code === 'ECONNREFUSED') {
+      console.log('Redis connection refused, retrying...');
+    }
+    return Math.min(options.attempt * 50, 1000);
+  },
+  max_attempts: 10,
+  connect_timeout: 1000,
+  lazyConnect: true,
+  keepAlive: true,
+  family: 4
+});
+
+// Pre-warm cache on startup
+const preWarmCache = async () => {
+  try {
+    console.log('🔥 Pre-warming cache...');
+    const allBooks = await pgPool.query('SELECT * FROM books ORDER BY created_at DESC');
+    const countResult = await pgPool.query('SELECT COUNT(*) FROM books');
+    
+    const result = {
+      books: allBooks.rows,
+      pagination: {
+        page: 1,
+        limit: allBooks.rows.length,
+        total: parseInt(countResult.rows[0].count),
+        pages: 1
+      },
+      source: 'postgresql-prewarmed'
+    };
+    
+    await redisClient.setex('pg:books:{}', 600, JSON.stringify(result));
+    console.log('✅ Cache pre-warmed with', allBooks.rows.length, 'books');
+  } catch (error) {
+    console.log('⚠️ Cache pre-warming failed:', error.message);
+  }
+};
+
+// Pre-warm cache after connections are established
+setTimeout(preWarmCache, 3000);
+
+redisClient.on('connect', () => console.log('✅ Redis connected'));
+redisClient.on('error', (err) => console.log('❌ Redis error:', err.message));
+
 const app = express();
-app.use(express.json());
+
+// Ultra-high performance middleware
+app.use(compression({ level: 6, threshold: 1024 })); // Compress responses
+app.use(express.json({ limit: '1mb' }));
+app.disable('x-powered-by'); // Remove unnecessary header
+app.set('trust proxy', 1); // Trust first proxy
+
+// Response time optimization
+app.use((req, res, next) => {
+  res.setHeader('Cache-Control', 'public, max-age=300'); // 5min browser cache
+  res.setHeader('Connection', 'keep-alive');
+  next();
+});
 
 const PORT = process.env.PORT || 5000;
 const MONGO_URL = process.env.MONGO_URL || 'mongodb://localhost:27017/bookdb';
+
+// MongoDB connection options for better performance
+const mongoOptions = {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  maxPoolSize: 50,        // Maximum number of connections
+  minPoolSize: 5,         // Minimum number of connections
+  maxIdleTimeMS: 30000,   // Close connections after 30 seconds of inactivity
+  serverSelectionTimeoutMS: 5000, // Keep trying to send operations for 5 seconds
+  socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
+  bufferMaxEntries: 0     // Disable mongoose buffering
+};
 
 const serviceDiscovery = new ServiceDiscovery();
 
@@ -110,7 +241,7 @@ const swaggerOptions = {
 
 const specs = swaggerJsdoc(swaggerOptions);
 
-mongoose.connect(MONGO_URL, { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect(MONGO_URL, mongoOptions)
   .then(() => console.log('Book Service MongoDB connected'))
   .catch(err => console.error('MongoDB connection error:', err));
 
@@ -269,10 +400,26 @@ app.get('/services', async (req, res) => {
  *               $ref: '#/components/schemas/Error'
  */
 
-// Get all books
+// Get all books with Redis cache
 app.get('/books', async (req, res) => {
   try {
-    const { page = 1, limit = 10, genre, author, search } = req.query;
+    const { genre, author, search } = req.query;
+    
+    // Create cache key
+    const cacheKey = `books:${JSON.stringify({ genre, author, search })}`;
+    
+    // Try Redis cache first
+    try {
+      const cached = await redisClient.get(cacheKey);
+      if (cached) {
+        console.log('✅ Cache HIT for:', cacheKey);
+        return res.json(JSON.parse(cached));
+      }
+    } catch (redisError) {
+      console.log('⚠️ Redis error, falling back to MongoDB:', redisError.message);
+    }
+    
+    console.log('❌ Cache MISS - Querying MongoDB for:', cacheKey);
     
     let query = {};
     
@@ -291,24 +438,30 @@ app.get('/books', async (req, res) => {
       query.$text = { $search: search };
     }
     
-    const skip = (page - 1) * limit;
-    
-    const books = await Book.find(query)
-      .limit(parseInt(limit))
-      .skip(skip)
-      .sort({ createdAt: -1 });
-    
-    const total = await Book.countDocuments(query);
-    
-    res.json({
+    const [books, total] = await Promise.all([
+      Book.find(query).sort({ createdAt: -1 }).lean(),
+      Book.countDocuments(query)
+    ]);
+
+    const result = {
       books,
       pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
+        page: 1,
+        limit: total,
         total,
-        pages: Math.ceil(total / limit)
+        pages: 1
       }
-    });
+    };
+    
+    // Cache result for 5 minutes
+    try {
+      await redisClient.setex(cacheKey, 300, JSON.stringify(result));
+      console.log('✅ Cached result for:', cacheKey);
+    } catch (redisError) {
+      console.log('⚠️ Failed to cache result:', redisError.message);
+    }
+    
+    res.json(result);
   } catch (error) {
     console.error('Error fetching books:', error);
     res.status(500).json({ error: 'Failed to fetch books' });
@@ -456,11 +609,23 @@ app.get('/books/:bookId', async (req, res) => {
  *               $ref: '#/components/schemas/Error'
  */
 
-// Create a new book
+// Create a new book with cache invalidation
 app.post('/books', async (req, res) => {
   try {
     const book = new Book(req.body);
     const savedBook = await book.save();
+    
+    // Invalidate cache
+    try {
+      const keys = await redisClient.keys('books:*');
+      if (keys.length > 0) {
+        await redisClient.del(keys);
+        console.log('🗑️ Cache invalidated:', keys.length, 'keys');
+      }
+    } catch (redisError) {
+      console.log('⚠️ Failed to invalidate cache:', redisError.message);
+    }
+    
     res.status(201).json(savedBook);
   } catch (error) {
     console.error('Error creating book:', error);
@@ -707,9 +872,161 @@ app.get('/search', async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /booksql:
+ *   get:
+ *     summary: Get All Books from PostgreSQL
+ *     description: Retrieve books from PostgreSQL database for performance comparison
+ *     tags: [Books]
+ *     parameters:
+ *       - in: query
+ *         name: genre
+ *         schema:
+ *           type: string
+ *         description: Filter books by genre
+ *       - in: query
+ *         name: author
+ *         schema:
+ *           type: string
+ *         description: Filter books by author name
+ *     responses:
+ *       200:
+ *         description: List of books from PostgreSQL
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 books:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                 pagination:
+ *                   type: object
+ *                 source:
+ *                   type: string
+ *                   example: "postgresql"
+ *       500:
+ *         description: Failed to fetch books from PostgreSQL
+ */
+
+// Ultra-high performance PostgreSQL with Redis cache
+app.get('/booksql', async (req, res) => {
+  try {
+    const { genre, author } = req.query;
+    
+    // Create cache key for PostgreSQL
+    const cacheKey = `pg:books:${JSON.stringify({ genre, author })}`;
+    
+    // Try Redis cache first
+    try {
+      const cached = await redisClient.get(cacheKey);
+      if (cached) {
+        console.log('✅ PostgreSQL Cache HIT:', cacheKey);
+        return res.json(JSON.parse(cached));
+      }
+    } catch (redisError) {
+      console.log('⚠️ Redis error for PostgreSQL:', redisError.message);
+    }
+    
+    console.log('❌ PostgreSQL Cache MISS:', cacheKey);
+    
+    let query = 'SELECT * FROM books';
+    let params = [];
+    let whereConditions = [];
+    
+    if (genre) {
+      whereConditions.push('genre = $' + (params.length + 1));
+      params.push(genre);
+    }
+    
+    if (author) {
+      whereConditions.push('author ILIKE $' + (params.length + 1));
+      params.push('%' + author + '%');
+    }
+    
+    if (whereConditions.length > 0) {
+      query += ' WHERE ' + whereConditions.join(' AND ');
+    }
+    
+    query += ' ORDER BY created_at DESC';
+    
+    const [booksResult, countResult] = await Promise.all([
+      pgPool.query(query, params),
+      pgPool.query('SELECT COUNT(*) FROM books' + (whereConditions.length > 0 ? ' WHERE ' + whereConditions.join(' AND ') : ''), params)
+    ]);
+    
+    const books = booksResult.rows;
+    const total = parseInt(countResult.rows[0].count);
+    
+    const result = {
+      books,
+      pagination: {
+        page: 1,
+        limit: total,
+        total,
+        pages: 1
+      },
+      source: 'postgresql-cached'
+    };
+    
+    // Cache result for 10 minutes
+    try {
+      await redisClient.setex(cacheKey, 600, JSON.stringify(result));
+      console.log('✅ PostgreSQL result cached:', cacheKey);
+    } catch (redisError) {
+      console.log('⚠️ Failed to cache PostgreSQL result:', redisError.message);
+    }
+    
+    res.json(result);
+  } catch (error) {
+    console.error('Error fetching books from PostgreSQL:', error);
+    res.status(500).json({ error: 'Failed to fetch books from PostgreSQL' });
+  }
+});
+
+// Create a new book in PostgreSQL with cache invalidation
+app.post('/booksql', async (req, res) => {
+  try {
+    const { title, author, isbn, publisher, publishDate, genre, description, price, pages } = req.body;
+    
+    const query = `
+      INSERT INTO books (title, author, isbn, publisher, publish_date, genre, description, price, pages)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      RETURNING *
+    `;
+    
+    const result = await pgPool.query(query, [
+      title, author, isbn, publisher, publishDate, genre, description, price, pages
+    ]);
+    
+    // Invalidate PostgreSQL cache
+    try {
+      const keys = await redisClient.keys('pg:books:*');
+      if (keys.length > 0) {
+        await redisClient.del(keys);
+        console.log('🗑️ PostgreSQL cache invalidated:', keys.length, 'keys');
+      }
+    } catch (redisError) {
+      console.log('⚠️ Failed to invalidate PostgreSQL cache:', redisError.message);
+    }
+    
+    res.status(201).json({
+      book: result.rows[0],
+      source: 'postgresql'
+    });
+  } catch (error) {
+    console.error('Error creating book in PostgreSQL:', error);
+    if (error.code === '23505') {
+      return res.status(400).json({ error: 'Book with this ISBN already exists' });
+    }
+    res.status(500).json({ error: 'Failed to create book in PostgreSQL' });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Book Service running on port ${PORT}`);
   console.log(`Book Service Swagger docs available at: http://localhost:${PORT}/api-docs`);
-  // Register service after server starts
   setTimeout(registerService, 2000);
 }); 

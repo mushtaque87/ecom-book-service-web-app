@@ -4,7 +4,7 @@ metadata:
   name: book-service
   namespace: book-app
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       app: book-service
@@ -15,8 +15,8 @@ spec:
     spec:
       containers:
       - name: book-service
-        image: mushtaque87/book-service:latest
-        imagePullPolicy: Always
+        image: mushtaque87/book-service:postgres
+        imagePullPolicy: Never
         ports:
         - containerPort: 5000
         env:
@@ -24,11 +24,11 @@ spec:
           value: mongodb://mongo:mongo123@book-mongo:27017/bookdb?authSource=admin
         resources:
           requests:
-            cpu: "100m"
-            memory: "128Mi"
+            cpu: "1000m"
+            memory: "2Gi"
           limits:
-            cpu: "500m"
-            memory: "512Mi"
+            cpu: "2000m"
+            memory: "4Gi"
         readinessProbe:
           httpGet:
             path: /health

@@ -1,0 +1,2 @@
+#Run wrk2 as docker container
+docker run --rm -it --platform linux/amd64 williamyeh/wrk wrk -t4 -c100 -d60s http://host.docker.internal:30080/books
