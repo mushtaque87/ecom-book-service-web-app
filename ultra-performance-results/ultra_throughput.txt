@@ -1,0 +1,42 @@
+This is ApacheBench, Version 2.3 <$Revision: 1903618 $>
+Copyright 1996 Adam Twiss, Zeus Technology Ltd, http://www.zeustech.net/
+Licensed to The Apache Software Foundation, http://www.apache.org/
+
+Benchmarking localhost (be patient)
+
+
+Server Software:        
+Server Hostname:        localhost
+Server Port:            30080
+
+Document Path:          /booksql
+Document Length:        1634 bytes
+
+Concurrency Level:      200
+Time taken for tests:   4.820 seconds
+Complete requests:      10000
+Failed requests:        0
+Total transferred:      19681978 bytes
+HTML transferred:       16340000 bytes
+Requests per second:    2074.51 [#/sec] (mean)
+Time per request:       96.408 [ms] (mean)
+Time per request:       0.482 [ms] (mean, across all concurrent requests)
+Transfer rate:          3987.35 [Kbytes/sec] received
+
+Connection Times (ms)
+              min  mean[+/-sd] median   max
+Connect:        0    0   0.8      0       7
+Processing:     7   95  39.5     92     385
+Waiting:        7   95  39.5     91     385
+Total:          7   95  39.8     92     388
+
+Percentage of the requests served within a certain time (ms)
+  50%     92
+  66%    102
+  75%    108
+  80%    113
+  90%    127
+  95%    141
+  98%    205
+  99%    310
+ 100%    388 (longest request)

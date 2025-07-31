@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-read-replica
+  namespace: book-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: postgres-read-replica
+  template:
+    metadata:
+      labels:
+        app: postgres-read-replica
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15-alpine
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_DB
+          value: bookdb
+        - name: POSTGRES_USER
+          value: postgres
+        - name: POSTGRES_PASSWORD
+          value: postgres123
+        - name: PGUSER
+          value: postgres
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "1Gi"
+          limits:
+            cpu: "1000m"
+            memory: "2Gi"
+        args:
+          - "postgres"
+          - "-c"
+          - "max_connections=100"
+          - "-c"
+          - "shared_buffers=512MB"
+          - "-c"
+          - "effective_cache_size=1GB"
+        volumeMounts:
+        - name: postgres-storage
+          mountPath: /var/lib/postgresql/data
+      volumes:
+      - name: postgres-storage
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-read-replica
+  namespace: book-app
+spec:
+  selector:
+    app: postgres-read-replica
+  ports:
+    - port: 5432
+      targetPort: 5432
+  type: ClusterIP

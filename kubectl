@@ -1,11 +1,37 @@
+#Set Kubeconfig
 export KUBECONFIG=/path/to/book_cluster_kubeconfig.yaml
 
+#Get all contexts
 kubectl config get-contexts
 kubectl config use-context <context-name>
 
+#Get all resources in the namespace
 kubectl get pods -n book-app
 kubectl get svc -n book-app
 kubectl get nodes -n book-app
+kubectl get services -n book-app
+kubectl get deployments -n book-app
+kubectl get statefulsets -n book-app
+kubectl delete pods -n book-app -l app=book-service
+kubectl get pvc -n book-app
+kubectl get pv
+kubectl get jobs -n book-app
+kubectl get secrets -n book-app
+
+#Check Pod Logs
+kubectl logs book-service-68f8bc79fc-zjrx6 -n book-app --previous
+
+#Check Pod Events
+kubectl describe pod book-service-68f8bc79fc-zjrx6 -n book-app
+
+#Install Metrics Server
+kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+
+#Check Pod Metrics
+kubectl top pods -n book-app
+
+#Check Node Metrics
+kubectl top nodes
 
 #delete all resources in the namespace 
 kubectl delete all --all -n book-app && kubectl delete pvc --all -n book-app && kubectl delete pv --all && kubectl delete jobs --all -n book-app
